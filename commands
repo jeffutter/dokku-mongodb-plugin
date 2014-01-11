@@ -5,6 +5,7 @@ APP=$2
 
 OLDHOME=$HOME
 HOME="$DOKKU_ROOT/.mongodb"
+container_port=17017 # Use something different than the default mongodb port to mitigate port collisions with the host
 
 check_exists() {
   if [[ ! -d "$DOKKU_ROOT/$APP" ]]; then
@@ -33,9 +34,9 @@ mongodb_database="${APP/./_}-production"
 db_image="jeffutter/mongodb"
 id=$(docker ps | grep "$db_image":latest |  awk '{print $1}')
 if [[ -n "$id" ]]; then
-  mongodb_public_ip=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[1]}')
+  mongodb_public_ip=$(docker port ${id} ${container_port} | awk '{split($0,a,":"); print a[1]}')
   mongodb_private_ip=$(docker inspect ${id} | grep IPAddress | awk '{ print $2 }' | tr -d ',"')
-  mongodb_port=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[2]}')
+  mongodb_port=$(docker port ${id} ${container_port} | awk '{split($0,a,":"); print a[2]}')
   if [[ $mongodb_public_ip = "0.0.0.0" ]]; then
     mongodb_public_ip=localhost
   fi
@@ -53,7 +54,7 @@ case "$1" in
     mongodb_username=$APP
     mongo $mongodb_public_ip:$mongodb_port/$mongodb_database --quiet -u admin -p"$admin_pass" --authenticationDatabase="admin" --eval "db.addUser(\"${mongodb_username}\", \"${mongodb_password}\")"
 
-    mongodb_port=27017
+    mongodb_port=$container_port
 
     dokku config:set "$APP" MONGODB_DATABASE="$mongodb_database" \
       MONGODB_HOST="$mongodb_private_ip" \
@@ -84,7 +85,7 @@ case "$1" in
     if [[ "$id" != "" ]]; then
       echo "MongoDB container already running with ID: ${id}"
     else
-      docker run -p 27017:27017 -d -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo jeffutter/mongodb /usr/bin/mongod --dbpath=/tmp/mongo --auth
+      docker run -p "$container_port:$container_port" -d -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo jeffutter/mongodb /usr/bin/mongod --dbpath=/tmp/mongo --auth -port "$container_port"
     fi
     ;;
   mongodb:stop)

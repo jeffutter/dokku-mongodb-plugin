@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Use something different than the default mongodb port to mitigate port collisions with the host
+container_port=17017
+
 # Build MongoDB image
 db_image="jeffutter/mongodb"
 docker pull "$db_image"
@@ -29,10 +32,10 @@ if [[ ! -d "$DOKKU_ROOT/.mongodb" ]]; then
 
   chown -R dokku: "$DOKKU_ROOT/.mongodb"
 
-  docker run -p 27017:27017 -d -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo "$db_image" /usr/bin/mongod --dbpath=/tmp/mongo
+  docker run -p "$container_port:$container_port" -d -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo "$db_image" /usr/bin/mongod --dbpath=/tmp/mongo -port "$container_port"
   id=$(docker ps | grep "$db_image":latest |  awk '{print $1}')
-  mongodb_ip=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[1]}')
-  mongodb_port=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[2]}')
+  mongodb_ip=$(docker port ${id} ${container_port} | awk '{split($0,a,":"); print a[1]}')
+  mongodb_port=$(docker port ${id} ${container_port} | awk '{split($0,a,":"); print a[2]}')
   if [[ $mongodb_ip = "0.0.0.0" ]]; then
     mongodb_ip=localhost
   fi
