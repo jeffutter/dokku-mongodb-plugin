@@ -10,11 +10,11 @@ Vagrant.configure("2") do |config|
   config.berkshelf.enabled = true
   config.omnibus.chef_version = :latest
 
-  config.vm.define :ubuntu1304 do |ubuntu1304|
-    ubuntu1304.vm.box      = 'opscode-ubuntu-13.04'
-    ubuntu1304.vm.box_url  = 'https://opscode-vm.s3.amazonaws.com/vagrant/opscode_ubuntu-13.04_provisionerless.box'
-    ubuntu1304.vm.hostname = 'mydokku.com'
-    ubuntu1304.vm.network :private_network, ip: '192.168.50.10'
+  config.vm.define :ubuntu1404 do |ubuntu1404|
+    ubuntu1404.vm.box      = 'opscode-ubuntu-14.04'
+    ubuntu1404.vm.box_url  = 'http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-14.04_chef-provisionerless.box'
+    ubuntu1404.vm.hostname = 'mydokku.com'
+    ubuntu1404.vm.network :private_network, ip: '192.168.50.10'
   end
 
   config.vm.provider "virtualbox" do |v|
