@@ -9,7 +9,12 @@ fi
 
 
 #new way supports multi db per db
-for f in `ls $DOKKU_ROOT/.mongodb/pass_${APP}_*`; do
-  DATABASE=$( echo "$f" | cut -d'_' -f3 )
-  dokku mongodb:link $APP $DATABASE
-done
+shopt -s nullglob
+set -- $DOKKU_ROOT/.mongodb/pass_${APP}_*
+if [ "$#" -gt 0 ]; then
+  for f in "$@"; do
+    DATABASE=$( echo "$f" | cut -d'_' -f3 )
+    dokku mongodb:link $APP $DATABASE
+  done
+fi
+shopt -u nullglob
