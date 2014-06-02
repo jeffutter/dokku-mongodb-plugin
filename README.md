@@ -23,7 +23,7 @@ $ dokku help
 
 Simple usage
 ------------
-Your need to have app running with the same name!
+You need to have app running with the same name!
 
 Create a new DB:
 ```
