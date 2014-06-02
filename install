@@ -14,14 +14,13 @@ fi
 apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
 echo deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen > /etc/apt/sources.list.d/10gen.list
 apt-get update
-apt-get -y install mongodb-org
+apt-get -y install mongodb-org-shell
 
 if [ $previous_mongo_install = false ]; then
   echo 'ENABLE_MONGODB="no"' > /etc/default/mongodb
 fi
 
 if [[ ! -d "$DOKKU_ROOT/.mongodb" ]]; then
-  mkdir -p "$DOKKU_ROOT/.mongodb"
   mkdir -p "$DOKKU_ROOT/.mongodb/data"
 
   admin_pass=$(openssl rand -base64 32|base64)
@@ -29,26 +28,32 @@ if [[ ! -d "$DOKKU_ROOT/.mongodb" ]]; then
 
   chown -R dokku: "$DOKKU_ROOT/.mongodb"
 
-  docker run -p 27017 -d -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo "$db_image" /usr/bin/mongod --dbpath=/tmp/mongo
-  id=$(docker ps | grep "$db_image":latest |  awk '{print $1}')
+  id=$(docker run -p 27017 -d -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo "$db_image" /usr/bin/mongod --dbpath=/tmp/mongo)
   mongodb_ip=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[1]}')
   mongodb_port=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[2]}')
   if [[ $mongodb_ip = "0.0.0.0" ]]; then
-    mongodb_ip=localhost
+    mongodb_ip=127.0.0.1
   fi
 
-  admin_id=""
+  admin_success=false
   loop_count=0
-  while [ -z "$admin_id" -a $loop_count -lt 100 ];
+  while [ $loop_count -lt 100 ];
   do
     echo "Connecting to server and creating admin user"
     sleep 2 # give mongodb some time to start
-    admin_id=$(mongo $mongodb_ip:$mongodb_port/admin --eval "db.addUser(\"admin\", \"${admin_pass}\")" | grep "_id" | awk '{split($0,a,":");split(a[2],b,"\""); print b[2]}')
-    loop_count=$((loop_count + 1))
+    create_output=$(mongo $mongodb_ip:$mongodb_port/admin --eval "db.createUser({user: \"admin\", pwd: \"${admin_pass}\", roles: [ \"root\" ]})")
+    if [[ $? == 0 ]]; then
+      echo "Admin user created successfully"
+      admin_success=true
+      break
+    else
+      echo $create_output
+      loop_count=$((loop_count + 1))
+    fi
   done
   docker stop "$id"
 
-  if [ -z $admin_id ]; then
+  if [ "$admin_sucess" = true ]; then
     echo "Unable to create the admin user!" 
   fi
 fi
