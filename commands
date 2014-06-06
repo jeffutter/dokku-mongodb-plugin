@@ -103,12 +103,17 @@ case "$1" in
     check_app
 
     mongodb_password=$(openssl rand -base64 32|base64)
+    mongodb_password_backup=''
 
     if [[ -z "$3"  ]]; then
-      mongodb_password_backup="$(cat \"$DOKKU_ROOT/.mongodb/pass_${APP}\")"
+      if [[ -f "$DOKKU_ROOT/.mongodb/pass_${APP}" ]]; then
+        mongodb_password_backup=$(cat "$DOKKU_ROOT/.mongodb/pass_${APP}")
+      fi
       echo $mongodb_password > "$DOKKU_ROOT/.mongodb/pass_${APP}"
     else
-      mongodb_password_backup="$(cat \"$DOKKU_ROOT/.mongodb/pass_${APP}_${DATABASE}\")"
+      if [[ -f "$DOKKU_ROOT/.mongodb/pass_${APP}_${DATABASE}" ]]; then
+        mongodb_password_backup=$(cat "$DOKKU_ROOT/.mongodb/pass_${APP}_${DATABASE}")
+      fi
       echo $mongodb_password > "$DOKKU_ROOT/.mongodb/pass_${APP}_${DATABASE}"
     fi
 
@@ -127,6 +132,7 @@ case "$1" in
 
       ### If it ends with an error, rollback password file change
       if [[ $? -ne 0 ]]; then
+        echo "Rolling back changes..."
         if [[ -z "$3"  ]]; then
           echo $mongodb_password_backup > "$DOKKU_ROOT/.mongodb/pass_${APP}"
         else
