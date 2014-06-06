@@ -1,8 +1,51 @@
 #!/bin/bash
 
 # Build MongoDB image
-db_image="jeffutter/mongodb"
+if [[ $(docker images) == *jeffutter/mongodb* ]]
+then
+  MONGODB_VERSION=$(docker run --rm jeffutter/mongodb mongod --version | egrep -o '[[:digit:]\.]*'|head -n1)
+  vercomp "$MONGODB_VERSION" '2.5.9999999999999999'                                                                                                                                                   
+  if [[ $? == 1 ]]; then
+    db_image="jeffutter/mongodb"
+  else
+    db_image="jeffutter/mongodb:2.4"
+  fi
+else 
+  db_image="jeffutter/mongodb"
+fi
 docker pull "$db_image"
+
+vercomp () {
+  if [[ $1 == $2 ]]
+  then
+    return 0
+  fi
+  local IFS=.
+  local i ver1=($1) ver2=($2)
+  # fill empty fields in ver1 with zeros
+  for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+  do
+    ver1[i]=0
+  done
+  for ((i=0; i<${#ver1[@]}; i++))
+  do
+    if [[ -z ${ver2[i]} ]]
+    then
+      # fill empty fields in ver2 with zeros
+      ver2[i]=0
+    fi
+    if ((10#${ver1[i]} > 10#${ver2[i]}))
+    then
+      return 1
+    fi
+    if ((10#${ver1[i]} < 10#${ver2[i]}))
+    then
+      return 2
+    fi
+  done
+  return 0
+}
+
 
 if [[ -f /etc/init/mongodb.conf ]]
 then
