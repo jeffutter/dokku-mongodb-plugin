@@ -149,7 +149,7 @@ case "$1" in
 
       set_dokku_env MONGODB_DATABASE "$mongodb_database"
       set_dokku_env MONGODB_HOST "$mongodb_private_ip"
-      set_dokku_env MONGODB_PORT "$mongodb_port"
+      set_dokku_env MONGODB_PORT "$mongodb_internal_port"
       set_dokku_env MONGODB_USERNAME "$mongodb_username"
       set_dokku_env MONGODB_PASSWORD "$mongodb_password"
       set_dokku_env MONGO_URL "mongodb://${mongodb_username}:${mongodb_password}@${mongodb_private_ip}:${mongodb_internal_port}/${mongodb_database}"
