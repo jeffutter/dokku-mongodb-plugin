@@ -12,8 +12,10 @@ fi
 get_mongodb_version
 vercomp "$MONGODB_VERSION" '2.5.9999999999999999'                                                                                                                                                   
 if [[ $? == 1 ]]; then
+  # 2.6
   IMAGE="jeffutter/mongodb"
 else
+  # 2.4
   IMAGE="jeffutter/mongodb:2.4"
 fi
 
