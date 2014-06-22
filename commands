@@ -9,16 +9,6 @@ else
   DATABASE=$3
 fi
 
-get_mongodb_version
-vercomp "$MONGODB_VERSION" '2.5.9999999999999999'                                                                                                                                                   
-if [[ $? == 1 ]]; then
-  # 2.6
-  IMAGE="jeffutter/mongodb"
-else
-  # 2.4
-  IMAGE="jeffutter/mongodb:2.4"
-fi
-
 OLDHOME=$HOME
 HOME="$DOKKU_ROOT/.mongodb"
 
@@ -87,11 +77,20 @@ vercomp () {
   return 0
 }
 
+get_mongodb_version
+vercomp "$MONGODB_VERSION" '2.5.9999999999999999'                                                                                                                                                   
+if [[ $? == 1 ]]; then
+  # 2.6
+  db_image="jeffutter/mongodb:latest"
+else
+  # 2.4
+  db_image="jeffutter/mongodb:2.4"
+fi
+
 admin_pass=$(cat "$DOKKU_ROOT/.mongodb/admin_pw")
 mongodb_database="${DATABASE/./_}-production"
 
-db_image="jeffutter/mongodb"
-id=$(docker ps | grep "$db_image":latest |  awk '{print $1}')
+id=$(docker ps | grep "$db_image" |  awk '{print $1}')
 if [[ -n "$id" ]]; then
   mongodb_public_ip=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[1]}')
   mongodb_private_ip=$(docker inspect ${id} | grep IPAddress | awk '{ print $2 }' | tr -d ',"')
@@ -177,7 +176,7 @@ case "$1" in
     if [[ "$id" != "" ]]; then
       echo "MongoDB container already running with ID: ${id}"
     else
-      stopped_id=$(docker ps -a | grep "$db_image:latest[[:space:]].\+[[:space:]]dokku-mongodb[[:space:]]*$" |  awk '{print $1}')
+      stopped_id=$(docker ps -a | grep "$db_image[[:space:]].\+[[:space:]]dokku-mongodb[[:space:]]*$" |  awk '{print $1}')
       if [[ "$stopped_id" != "" ]]; then
         docker start $stopped_id
       else
