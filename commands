@@ -161,7 +161,7 @@ case "$1" in
       set_dokku_env MONGO_URL "mongodb://${mongodb_username}:${mongodb_password}@${mongodb_private_ip}:${mongodb_internal_port}/${mongodb_database}"
 
       echo
-      echo "-----> $APP linked to $IMAGE container"
+      echo "-----> $APP linked to $db_image container"
     fi
     ;;
   mongodb:list)
@@ -180,7 +180,7 @@ case "$1" in
       if [[ "$stopped_id" != "" ]]; then
         docker start $stopped_id
       else
-        docker run -p 27017 -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo --name="dokku-mongodb" -d "$IMAGE" /usr/bin/mongod --dbpath=/tmp/mongo --auth
+        docker run -p 27017 -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo --name="dokku-mongodb" -d "$db_image" /usr/bin/mongod --dbpath=/tmp/mongo --auth
       fi
     fi
     ;;
