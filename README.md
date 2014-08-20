@@ -39,7 +39,7 @@ $ ssh dokku@server mongodb:create foo # Client side
 
 ```
 
-Now if you push your app again, you will have the following ENV variables
+Now if you push your app again, you will have the following ENV variables:
 ```
 MONGODB_DATABASE
 MONGODB_HOST
@@ -47,6 +47,11 @@ MONGODB_PORT
 MONGODB_USERNAME
 MONGODB_PASSWORD
 MONGO_URL
+```
+
+These can be found using:
+```
+dokku config foo
 ```
 
 Persistence
