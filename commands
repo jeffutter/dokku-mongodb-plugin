@@ -143,7 +143,8 @@ case "$1" in
       MONGODB_USERNAME \
       MONGODB_PASSWORD \
       MONGODB_PORT \
-      MONGO_URL
+      MONGO_URL \
+      MONGO_URI
     ;;
   mongodb:link)
     if [[ -d "$DOKKU_ROOT/$APP" ]]; then
@@ -164,6 +165,8 @@ case "$1" in
       set_dokku_env MONGODB_USERNAME "$mongodb_username"
       set_dokku_env MONGODB_PASSWORD "$mongodb_password"
       set_dokku_env MONGO_URL "mongodb://${mongodb_username}:${mongodb_password}@${mongodb_private_ip}:${mongodb_internal_port}/${mongodb_database}"
+      set_dokku_env MONGO_URI "mongodb://${mongodb_username}:${mongodb_password}@${mongodb_private_ip}:${mongodb_internal_port}/${mongodb_database}"
+
 
       echo
       echo "-----> $APP linked to $db_image container"
