@@ -1,6 +1,7 @@
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/jeffutter/dokku-mongodb-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 MongoDB plugin for Dokku
 ---------------------------
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/jeffutter/dokku-mongodb-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Plugin to setup Mongodb accounts for containers deployed to Dokku
 
 
