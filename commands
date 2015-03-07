@@ -26,6 +26,18 @@ check_app() {
   fi
 }
 
+# checks whether a database exists
+check_db() {
+  db=$(mongo $mongodb_public_ip:$mongodb_port --quiet -u admin -p"$admin_pass" --authenticationDatabase="admin" --eval "printjson(db.adminCommand('listDatabases'));" | grep name | cut -d \" -f 4 |grep -x $1)
+
+  if [[ -z "$db" ]]; then
+    echo "The database $1 doesn't exist"
+    exit 1
+  fi
+
+
+}
+
 check_container() {
   if [[ -z "$id" ]]; then
     echo "MongoDB container not started cannot continue. Start with dokku mongodb:start"
@@ -148,7 +160,7 @@ case "$1" in
     ;;
   mongodb:dump)
     check_container
-    check_app
+    check_db "$2"
 
     echo "ejo ejo"
     ;;
@@ -214,11 +226,11 @@ case "$1" in
     mongodb:console                 		    Launch an admin mongodb console
     mongodb:create <app> <database> 		    Create a Mongo database and optional params for app
     mongodb:delete <app> <database> 		    Delete specified Mongo database
-    mongodb:dump <app> <database>		    Creates a binary export of the contents of a database
+    mongodb:dump <database>		    	    Creates a binary export of the contents of a database
     mongodb:link <app> <database>	       	    Set ENV variables for app if database exists
     mongodb:list                    		    List all databases
     mongodb:logs                    		    Show logs from MongoDB program
-    mongodb:restore <app> <database>		    Restores the state of a database exported with mongodb:dump
+    mongodb:restore <database>		  	    Restores the state of a database exported with mongodb:dump
     mongodb:start                   		    Start the MongoDB docker container if it isn't running
     mongodb:stop                    		    Stop the MongoDB docker container
     mongodb:status                  		    Shows status of MongoDB
