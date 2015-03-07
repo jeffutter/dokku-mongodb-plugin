@@ -92,7 +92,7 @@ else
 fi
 
 admin_pass=$(cat "$DOKKU_ROOT/.mongodb/admin_pw")
-mongodb_database="${DATABASE/./_}-production"
+mongodb_database="${DATABASE//./_}-production"
 
 id=$(docker ps | grep "$db_image" |  awk '{print $1}')
 if [[ -n "$id" ]]; then
