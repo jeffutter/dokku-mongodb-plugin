@@ -168,21 +168,16 @@ case "$1" in
     check_db "$2"
   
     logtime=$(date +%Y-%m-%d-%Hh%Mm%Ss)
-    dumpfile="$HOME/dumps/$2-$logtime"
-    rm -rf "$tmp_dir"
+    dumpdir="$HOME/dumps/$2-$logtime"
+    dumpfile="$dumpdir"
     mkdir -p "$HOME/dumps";
     
+    mongodump -h $mongodb_public_ip --port $mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$dumpdir" > /dev/null
     # tar.gz dump
-    if [ "$3" = true ]; then
-      echo "tar.gz true"
-      tmp_dir="/tmp/mongodump"
-      dumpfile="$dumpfile.tar.gz"
-      mongodump -h $mongodb_public_ip --port $mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$tmp_dir" > /dev/null
-      tar -zcP -C "$tmp_dir" -f "$dumpfile" "$2"
-    # dump directory
-    else 
-      echo "ONLY FOLDER"
-      mongodump -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$dumpfile" > /dev/null 
+    if [[ $3 == "-tar" ]]; then 
+      dumpfile="$dumpdir.tar.gz"
+      tar -zcP -C "$dumpdir" -f "$dumpfile" "$2"
+      rm -rf "$dumpdir"
     fi
     echo "Saved dump successfully to $dumpfile"
     ;;
@@ -233,17 +228,15 @@ case "$1" in
     # extract dump if necessary
     if [[ $fileOrDir == *"tar.gz" ]]; then 
       tempdir="$HOME/dumps/temp"
-      #rm -rf "$tempdir"
-      #mkdir -p "$tempdir"
-      #tar -xzvf $fileOrDir -C "$tempdir"
+      rm -rf "$tempdir"
+      mkdir -p "$tempdir"
+      tar -xzvf $fileOrDir -C "$tempdir" > /dev/null
       fileOrDir="$tempdir/$2"
       if [[ ! -d "$fileOrDir" ]]; then
         fail "The .tar.gz-file didn't contain a database-dump for $2"
       fi
     fi
-
-    mongorestore -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --drop "$fileOrDir"
-
+    mongorestore -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --drop "$fileOrDir" > /dev/null 
     ;;
   mongodb:start)
     if [[ "$id" != "" ]]; then
@@ -273,11 +266,11 @@ case "$1" in
     mongodb:console                 		    Launch an admin mongodb console
     mongodb:create <app> <database> 		    Create a Mongo database and optional params for app
     mongodb:delete <app> <database> 		    Delete specified Mongo database
-    mongodb:dump <database> <tarball>	   	    Creates a binary export of the contents of a database
+    mongodb:dump <database> [-tar]	   	    Creates a binary export of the contents of a database (-tar tarball dump)
     mongodb:link <app> <database> 	            Set ENV variables for app if database exists
     mongodb:list                    		    List all databases
     mongodb:logs                    		    Show logs from MongoDB program
-    mongodb:restore <database> <file- or dirname>   Restores the state of a database exported with mongodb:dump
+    mongodb:restore <database> <file-or dirname>    Restores the state of a database exported with mongodb:dump
     mongodb:start                   		    Start the MongoDB docker container if it isn't running
     mongodb:stop                    		    Stop the MongoDB docker container
     mongodb:status                  		    Shows status of MongoDB
