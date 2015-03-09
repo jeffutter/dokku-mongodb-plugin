@@ -182,7 +182,7 @@ case "$1" in
     # dump directory
     else 
       echo "ONLY FOLDER"
-      mongodump -h $mongodb_public_ip --port $mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$dumpfile" > /dev/null 
+      mongodump -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$dumpfile" > /dev/null 
     fi
     echo "Saved dump successfully to $dumpfile"
     ;;
@@ -219,6 +219,31 @@ case "$1" in
   mongodb:logs)
     check_container
     docker logs dokku-mongodb | tail -n 100
+    ;;
+  mongodb:restore) 
+    verify_min_args 2 "$@"
+    check_container
+    check_db "$2"
+
+    fileOrDir="$3"
+    # does file or folder exist?
+    if [[ ! -d "$fileOrDir" && ! -f "$fileOrDir" ]]; then
+      fail "$fileOrDir doesn't exist"
+    fi
+    # extract dump if necessary
+    if [[ $fileOrDir == *"tar.gz" ]]; then 
+      tempdir="$HOME/dumps/temp"
+      #rm -rf "$tempdir"
+      #mkdir -p "$tempdir"
+      #tar -xzvf $fileOrDir -C "$tempdir"
+      fileOrDir="$tempdir/$2"
+      if [[ ! -d "$fileOrDir" ]]; then
+        fail "The .tar.gz-file didn't contain a database-dump for $2"
+      fi
+    fi
+
+    mongorestore -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --drop "$fileOrDir"
+
     ;;
   mongodb:start)
     if [[ "$id" != "" ]]; then
