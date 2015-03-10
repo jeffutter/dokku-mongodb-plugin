@@ -168,18 +168,23 @@ case "$1" in
     check_db "$2"
   
     logtime=$(date +%Y-%m-%d-%Hh%Mm%Ss)
-    dumpdir="$HOME/dumps/$2-$logtime"
+    dumpdir="$PWD/$2-$logtime"
     dumpfile="$dumpdir"
-    mkdir -p "$HOME/dumps";
     
-    mongodump -h $mongodb_public_ip --port $mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$dumpdir" > /dev/null
-    # tar.gz dump
-    if [[ $3 == "-tar" ]]; then 
-      dumpfile="$dumpdir.tar.gz"
-      tar -zcP -C "$dumpdir" -f "$dumpfile" "$2"
-      rm -rf "$dumpdir"
+    mongodump -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$dumpdir" > /dev/null
+    if [ $? -eq 0 ]; then
+      # tar.gz dump
+      if [[ $3 == "-tar" ]]; then 
+        dumpfile="$dumpdir.tar.gz"
+        tar -zcP -C "$dumpdir" -f "$dumpfile" "$2"
+        rm -rf "$dumpdir"
+      fi
+      echo "Saved dump successfully to $dumpfile"
+    # an error occured during the dump
+    else 
+      fail "An error occured while executing mongodump.
+Please check whether you have sufficient write privileges in $PWD"
     fi
-    echo "Saved dump successfully to $dumpfile"
     ;;
   mongodb:link)
     if [[ -d "$DOKKU_ROOT/$APP" ]]; then
@@ -220,10 +225,14 @@ case "$1" in
     check_container
     check_db "$2"
 
-    fileOrDir="$3"
+    fileOrDir="${3%/}"
     # does file or folder exist?
     if [[ ! -d "$fileOrDir" && ! -f "$fileOrDir" ]]; then
       fail "$fileOrDir doesn't exist"
+    fi
+    # does the folder have the same name as the database? 
+    if [[ -d "$fileOrDir" && "$fileOrDir" != *"$2"  ]]; then
+      fail "The folder $fileOrDir must have the same name as the database $2"
     fi
     # extract dump if necessary
     if [[ $fileOrDir == *"tar.gz" ]]; then 
@@ -236,7 +245,14 @@ case "$1" in
         fail "The .tar.gz-file didn't contain a database-dump for $2"
       fi
     fi
-    mongorestore -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --drop "$fileOrDir" > /dev/null 
+    output=$(mongorestore -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --drop "$fileOrDir")  
+    if [ $? -eq 0 ]; then
+      echo "Successfully restored database $2 from $fileOrDir"
+    else
+      fail "An error occured while executing mongorestore
+This is the output of the mongorestore-command:
+$output"
+    fi
     ;;
   mongodb:start)
     if [[ "$id" != "" ]]; then
