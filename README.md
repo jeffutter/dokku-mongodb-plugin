@@ -73,7 +73,7 @@ Since the data is stored outside the container, it will persistent through conta
 Backing up a database
 ---------------------
 
-`mongodb:dump` creates a backup of a whole database. The result can be optionally compressed in a gzipped tarball (tar.gz) by adding the `-tar` parameter after the database name. The dump is placed in `$DOKKU_ROOT/.mongodb/dumps` and named `<databasename>-<date and time>`.  
+`mongodb:dump` creates a backup of a whole database. The result can be optionally compressed in a gzipped tarball (tar.gz) by adding the `-tar` parameter after the database name. The dump is placed in the current directory and named `<databasename>-<date and time>`.  
 *Example: `dokku mongodb:dump api-production -tar`*
 
 Restoring a database
