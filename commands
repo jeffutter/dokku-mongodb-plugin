@@ -230,8 +230,8 @@ Please check whether you have sufficient write privileges in $PWD"
     fi
     
     if [[ $fileOrDir == *"tar.gz" ]]; then 
-      tempdir="/tmp/mongodump"
-      rm -rf "$tempdir"
+      randomstring=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+      tempdir="/tmp/mongodump/$randomstring"
       mkdir -p "$tempdir"
       tar -xzvf $fileOrDir -C "$tempdir" > /dev/null
       fileOrDir="$tempdir/$2"
