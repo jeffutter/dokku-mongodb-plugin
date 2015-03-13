@@ -247,6 +247,10 @@ Please check whether you have sufficient write privileges in $PWD"
 This is the output of the mongorestore-command:
 $output"
     fi
+    # cleanup temp-dir
+    if [ ! -z ${tempdir+x} ]; then
+      rm -rf "$tempdir"
+    fi
     ;;
   mongodb:start)
     if [[ "$id" != "" ]]; then
