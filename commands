@@ -12,24 +12,40 @@ fi
 OLDHOME=$HOME
 HOME="$DOKKU_ROOT/.mongodb"
 
+fail() {
+	echo "$@" 1>&2
+	exit 1
+}
+
+verify_min_args() {
+	local MIN_ARGS="$1"
+	[[ $# -le $((MIN_ARGS+1)) ]] && fail "Invalid number of arguments ($(($#-2)), expected $MIN_ARGS)."
+}
+
 check_exists() {
   if [[ ! -d "$DOKKU_ROOT/$APP" ]]; then
-    echo "App must exist before creating mongodb storage for it"
-    exit 1
+    fail "App must exist before creating mongodb storage for it"
   fi
 }
 
 check_app() {
   if [[ -z "$APP" ]]; then
-    echo "You must specify an app name"
-    exit 1
+    fail "You must specify an app name"
+  fi
+}
+
+# checks whether a database exists
+check_db() {
+  db=$(mongo $mongodb_public_ip:$mongodb_port --quiet -u admin -p"$admin_pass" --authenticationDatabase="admin" --eval "printjson(db.adminCommand('listDatabases'));" | grep name | cut -d \" -f 4 |grep -x $1)
+
+  if [[ -z "$db" ]]; then
+    fail "The database $1 doesn't exist"
   fi
 }
 
 check_container() {
   if [[ -z "$id" ]]; then
-    echo "MongoDB container not started cannot continue. Start with dokku mongodb:start"
-    exit 1
+    fail "MongoDB container not started cannot continue. Start with dokku mongodb:start"
   fi
 }
 
@@ -146,6 +162,29 @@ case "$1" in
       MONGO_URL \
       MONGO_URI
     ;;
+  mongodb:dump)
+    verify_min_args 1 "$@"
+    check_container
+    check_db "$2"
+  
+    logtime=$(date +%Y-%m-%d-%Hh%Mm%Ss)
+    dumpdir="$PWD/$2-$logtime"
+    dumpfile="$dumpdir"
+    mongodump -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$dumpdir" > /dev/null
+    if [ $? -eq 0 ]; then
+      # tar.gz dump
+      if [[ $3 == "-tar" ]]; then 
+        dumpfile="$dumpdir.tar.gz"
+        tar -zcP -C "$dumpdir" -f "$dumpfile" "$2"
+        rm -rf "$dumpdir"
+      fi
+      echo "Saved dump successfully to $dumpfile"
+    # an error occured during the dump
+    else 
+      fail "An error occured while executing mongodump.
+Please check whether you have sufficient write privileges in $PWD"
+    fi
+    ;;
   mongodb:link)
     if [[ -d "$DOKKU_ROOT/$APP" ]]; then
       mongodb_internal_port=27017
@@ -180,6 +219,39 @@ case "$1" in
     check_container
     docker logs dokku-mongodb | tail -n 100
     ;;
+  mongodb:restore) 
+    verify_min_args 2 "$@"
+    check_container
+
+    fileOrDir="${3%/}"
+    # does file or folder exist?
+    if [[ ! -d "$fileOrDir" && ! -f "$fileOrDir" ]]; then
+      fail "$fileOrDir doesn't exist"
+    fi
+    
+    if [[ $fileOrDir == *"tar.gz" ]]; then 
+      randomstring=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+      tempdir="/tmp/mongodump/$randomstring"
+      mkdir -p "$tempdir"
+      tar -xzvf $fileOrDir -C "$tempdir" > /dev/null
+      fileOrDir="$tempdir/$2"
+      if [[ ! -d "$fileOrDir" ]]; then
+        fail "The .tar.gz-file didn't contain a database-dump for $2"
+      fi
+    fi
+    output=$(mongorestore -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --drop "$fileOrDir")  
+    if [ $? -eq 0 ]; then
+      echo "Successfully restored database $2 from $3"
+    else
+      fail "An error occured while executing mongorestore
+This is the output of the mongorestore-command:
+$output"
+    fi
+    # cleanup temp-dir
+    if [ ! -z ${tempdir+x} ]; then
+      rm -rf "$tempdir"
+    fi
+    ;;
   mongodb:start)
     if [[ "$id" != "" ]]; then
       echo "MongoDB container already running with ID: ${id}"
@@ -205,15 +277,17 @@ case "$1" in
     ;;
   help)
     cat && cat<<EOF
-    mongodb:console                 Launch an admin mongodb console
-    mongodb:create <app> <database> Create a Mongo database and optional params for app
-    mongodb:delete <app> <database> Delete specified Mongo database
-    mongodb:link <app> <database>   Set ENV variables for app if database exists
-    mongodb:list                    List all databases
-    mongodb:logs                    Show logs from MongoDB program
-    mongodb:start                   Start the MongoDB docker container if it isn't running
-    mongodb:stop                    Stop the MongoDB docker container
-    mongodb:status                  Shows status of MongoDB
+    mongodb:console                 		    Launch an admin mongodb console
+    mongodb:create <app> <database> 		    Create a Mongo database and optional params for app
+    mongodb:delete <app> <database> 		    Delete specified Mongo database
+    mongodb:dump <database> [-tar]	   	    Creates a binary export of the contents of a database (-tar tarball dump)
+    mongodb:link <app> <database> 	            Set ENV variables for app if database exists
+    mongodb:list                    		    List all databases
+    mongodb:logs                    		    Show logs from MongoDB program
+    mongodb:restore <database> <file-or dirname>    Restores the state of a database exported with mongodb:dump
+    mongodb:start                   		    Start the MongoDB docker container if it isn't running
+    mongodb:stop                    		    Stop the MongoDB docker container
+    mongodb:status                  		    Shows status of MongoDB
 EOF
     ;;
 esac
