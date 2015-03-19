@@ -1,4 +1,5 @@
 #!/bin/bash
+[[ $DOKKU_TRACE ]] && set -x
 
 vercomp () {
   if [[ $1 == $2 ]]
