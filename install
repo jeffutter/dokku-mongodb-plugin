@@ -31,19 +31,26 @@ vercomp () {
   return 0
 }
 
+# Remove the log file if it already exists
+rm -f ./install.log
+echo "Plugin Install Dokku MongoDB" >> ./install.log
+
 # Build MongoDB image
+echo "Build MongoDB Image" >> ./install.log
 if [[ $(docker images) == *jeffutter/mongodb* ]]
 then
   MONGODB_VERSION=$(docker run --rm jeffutter/mongodb mongod --version | egrep -o '[[:digit:]\.]*'|head -n1)
-  vercomp "$MONGODB_VERSION" '2.5.9999999999999999'                                                                                                                                                   
+  vercomp "$MONGODB_VERSION" '2.5.9999999999999999'
   if [[ $? == 1 ]]; then
     db_image="jeffutter/mongodb"
   else
     db_image="jeffutter/mongodb:2.4"
   fi
-else 
+else
   db_image="jeffutter/mongodb"
 fi
+
+echo "docker pull $db_image" >> ./install.log
 docker pull "$db_image"
 
 if [[ -f /etc/init/mongodb.conf ]]
@@ -52,7 +59,8 @@ then
 else
   previous_mongo_install=false
 fi
-  
+echo "previous_mongo_install= $previous_mongo_install" >> ./install.log
+
 apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
 echo deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen > /etc/apt/sources.list.d/10gen.list
 apt-get update
@@ -60,9 +68,11 @@ apt-get -y install mongodb-clients
 
 if [ $previous_mongo_install = false ]; then
   echo 'ENABLE_MONGODB="no"' > /etc/default/mongodb
+  echo "ENABLE_MONGODB=no added to /etc/default/mongodb" >> ./install.log
 fi
 
 if [[ ! -d "$DOKKU_ROOT/.mongodb" ]]; then
+  echo ".mongodb not found -- run setup" >> ./install.log
   mkdir -p "$DOKKU_ROOT/.mongodb/data"
 
   admin_pass=$(openssl rand -base64 32|base64)
@@ -81,22 +91,24 @@ if [[ ! -d "$DOKKU_ROOT/.mongodb" ]]; then
   loop_count=0
   while [ $loop_count -lt 100 ];
   do
-    echo "Connecting to server and creating admin user"
+    echo "Connecting to server and creating admin user" >> ./install.log
     sleep 2 # give mongodb some time to start
-    create_output=$(mongo $mongodb_ip:$mongodb_port/admin --eval "db.createUser({user: \"admin\", pwd: \"${admin_pass}\", roles: [ \"root\" ]})")
+    create_output=$(mongo $mongodb_ip:$mongodb_port/admin --eval "db.addUser({user: \"admin\", pwd: \"${admin_pass}\", roles: [ \"root\" ]})")
     if [[ $? == 0 ]]; then
-      echo "Admin user created successfully"
+      echo "Admin user created successfully" >> ./install.log
       admin_success=true
       break
     else
-      echo $create_output
+      echo $create_output >> ./install.log
       loop_count=$((loop_count + 1))
     fi
   done
   docker stop "$id"
 
   if [ "$admin_sucess" = true ]; then
-    echo "Unable to create the admin user!" 
+    echo "Unable to create the admin user!" >> ./install.log
   fi
+else
+  echo ".mongodb found -- skip setup" >> ./install.log
 fi
-
+echo "Plugin Install Dokku MongoDB Completed" >> ./install.log
