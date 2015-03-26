@@ -107,7 +107,15 @@ if [[ ! -d "$DOKKU_ROOT/.mongodb" ]]; then
   while [ $loop_count -lt 100 ];
   do
     sleep 2 # give mongodb some time to start
-    create_output=$(mongo $mongodb_ip:$mongodb_port/admin --eval "db.addUser({user: \"admin\", pwd: \"${admin_pass}\", roles: [ \"root\" ]})")
+    consolelog ""
+    if [ $((loop_count%2)) -eq 1 ]; then
+        consolelog "-- Try [addUser] to create admin"
+        create_output=$(mongo $mongodb_ip:$mongodb_port/admin --eval "db.addUser({user: \"admin\", pwd: \"${admin_pass}\", roles: [ \"root\" ]})")
+    else
+        consolelog "-- Try [createUser] to create admin"
+        create_output=$(mongo $mongodb_ip:$mongodb_port/admin --eval "db.createUser({user: \"admin\", pwd: \"${admin_pass}\", roles: [ \"root\" ]})")
+    fi
+
     if [[ $? == 0 ]]; then
       consolelog "Admin user created successfully"
       admin_success=true
