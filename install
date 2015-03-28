@@ -1,4 +1,5 @@
 #!/bin/bash
+[[ $DOKKU_TRACE ]] && set -x
 
 vercomp () {
   if [[ $1 == $2 ]]
@@ -56,7 +57,7 @@ fi
 apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
 echo deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen > /etc/apt/sources.list.d/10gen.list
 apt-get update
-apt-get -y install mongodb-clients
+apt-get -y install mongodb-org-shell mongodb-org-tools
 
 if [ $previous_mongo_install = false ]; then
   echo 'ENABLE_MONGODB="no"' > /etc/default/mongodb
