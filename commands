@@ -196,7 +196,7 @@ Please check whether you have sufficient write privileges in $PWD"
 
       mongodb_username=$APP
 
-      # Have to set ENV vars this way. Using dokku config:set causes a loop where it tries to redeploy itself and calls this again
+      # We can use dokku config:set-norestart to avoid redeploy itself
 
       dokku config:set-norestart "$APP" MONGODB_DATABASE="$mongodb_database"
       dokku config:set-norestart "$APP" MONGODB_HOST="$mongodb_private_ip"
