@@ -196,7 +196,7 @@ Please check whether you have sufficient write privileges in $PWD"
 
       mongodb_username=$APP
 
-      dokku config:set-norestart "$APP" MONGODB_DATABASE="$mongodb_database" [MONGODB_HOST="$mongodb_private_ip" MONGODB_PORT="$mongodb_internal_port" MONGODB_USERNAME="$mongodb_username" MONGODB_PASSWORD="$mongodb_password" MONGO_URL="mongodb://${mongodb_username}:${mongodb_password}@${mongodb_private_ip}:${mongodb_internal_port}/${mongodb_database}" MONGO_URI="mongodb://${mongodb_username}:${mongodb_password}@${mongodb_private_ip}:${mongodb_internal_port}/${mongodb_database}"]
+      dokku config:set-norestart "$APP" MONGODB_DATABASE="$mongodb_database" MONGODB_HOST="$mongodb_private_ip" MONGODB_PORT="$mongodb_internal_port" MONGODB_USERNAME="$mongodb_username" MONGODB_PASSWORD="$mongodb_password" MONGO_URL="mongodb://${mongodb_username}:${mongodb_password}@${mongodb_private_ip}:${mongodb_internal_port}/${mongodb_database}" MONGO_URI="mongodb://${mongodb_username}:${mongodb_password}@${mongodb_private_ip}:${mongodb_internal_port}/${mongodb_database}"
 
       echo
       echo "-----> $APP linked to $db_image container"
