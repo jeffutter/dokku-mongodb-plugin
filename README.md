@@ -4,6 +4,11 @@ MongoDB plugin for Dokku
 ---------------------------
 Plugin to setup Mongodb accounts for containers deployed to Dokku
 
+Requirements
+------------
+
+Dokku version v0.3.16 or greater.
+
 
 Installation
 ------------
