@@ -131,6 +131,33 @@ if [[ ! -d "$DOKKU_ROOT/.mongodb" ]]; then
   if [ "$admin_sucess" = true ]; then
     consolelog "Unable to create the admin user!"
   fi
+
+  case "$DOKKU_DISTRO" in
+    ubuntu)
+      cat<<EOF > /etc/init/dokku-mongodb.conf
+description "Dokku MongoDB container"
+start on starting dokku-redeploy
+script
+  sleep 2 # give docker some time
+  sudo -i -u dokku /usr/local/bin/dokku mongodb:start
+end script
+EOF
+    ;;
+
+    opensuse)
+      cat<<EOF > /etc/systemd/system/dokku-mongodb.service
+[Unit]
+Description=Dokku MongoDB container
+After=docker.target
+[Service]
+Type=simple
+User=dokku
+ExecStart=/usr/local/bin/dokku mongodb:start
+[Install]
+WantedBy=multi-user.target
+EOF
+    ;;
+  esac
 else
   consolelog ".mongodb found -- skip setup"
 fi
