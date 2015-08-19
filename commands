@@ -166,9 +166,20 @@ case "$1" in
     verify_min_args 1 "$@"
     check_container
     check_db "$2"
+
+    # set backup root dir
+    if [[ -d "$4" ]]; then
+      dumproot=$4
+    else
+      dumproot="$PWD"
+    fi
+
+    # echo "dump will save to $dumproot"
+    # echo "dump run by $(whoami) user"
   
     logtime=$(date +%Y-%m-%d-%Hh%Mm%Ss)
-    dumpdir="$PWD/$2-$logtime"
+    dumpdir="$dumproot/$2-$logtime"
+
     dumpfile="$dumpdir"
     mongodump -h $mongodb_public_ip:$mongodb_port -u admin -p"$admin_pass" -d"$2" --authenticationDatabase="admin" --out "$dumpdir" > /dev/null
     if [ $? -eq 0 ]; then
