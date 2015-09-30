@@ -1,5 +1,5 @@
 ### This Plugin is Depreciated  ###
-There is an official mongodb plugin for dokku hosted in the mongodb org: https://github.com/dokku/dokku-mongo . I would recommend new users look there first. I will still maintain issues and pull requests here, but encourage users to consider migrating to the official plugin as it will get better support.
+There is an official mongodb plugin for dokku hosted in the dokku org: https://github.com/dokku/dokku-mongo . I would recommend new users look there first. I will still maintain issues and pull requests here, but encourage users to consider migrating to the official plugin as it will get better support.
 
 MongoDB plugin for Dokku
 ---------------------------
