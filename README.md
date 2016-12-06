@@ -14,11 +14,17 @@ Requirements
 Dokku version v0.3.16 or greater.
 
 
-Installation
+Installation ( Dokku v0.3.x )
 ------------
 ```
 git clone https://github.com/jeffutter/dokku-mongodb-plugin.git /var/lib/dokku/plugins/mongodb
 dokku plugins-install
+```
+
+Installation ( Dokku v0.4.0 or higher )
+------------
+```
+dokku plugin:install https://github.com/jeffutter/dokku-mongodb-plugin.git
 ```
 
 
